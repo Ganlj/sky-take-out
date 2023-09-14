@@ -1,7 +1,10 @@
 package com.sky.service.impl;
 
 import com.sky.constant.MessageConstant;
+import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.context.BaseContext;
+import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
@@ -9,9 +12,12 @@ import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.service.EmployeeService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.time.LocalDateTime;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -39,7 +45,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         //密码比对
-        // TODO 后期需要进行md5加密，然后再进行比对
+        // 用springBoot提供的工具类来进行MD5加密
+        password = DigestUtils.md5DigestAsHex(password.getBytes());
         if (!password.equals(employee.getPassword())) {
             //密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
@@ -52,6 +59,27 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //3、返回实体对象
         return employee;
+    }
+
+    @Override
+    public void save(EmployeeDTO employeeDTO) {
+        //在持久层做数据保存的时候还是将数据以Employee为载体传递给持久层
+        //用BeanUtils里的方法来拷贝属性,前提是两个实体里的属性名和类型一样
+        Employee employee = new Employee();
+        BeanUtils.copyProperties(employeeDTO,employee);
+        //在这里employee还有更多的属性值，所以需要手动设置
+        employee.setStatus(StatusConstant.ENABLE);//状态默认设置为1，表示启用账号
+        //设置默认密码为123456的MD5加密，同样用到了DigestUtils的Md5加密
+        employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
+        //设置创建时间
+        employee.setCreateTime(LocalDateTime.now());
+        //设置更新时间
+        employee.setUpdateTime(LocalDateTime.now());
+        //设置创建人id,即为当前登录用户的id
+        employee.setCreateUser(BaseContext.getCurrentId());
+        //设置更新人id，即为当前登录用户的id
+        employee.setUpdateUser(BaseContext.getCurrentId());
+        employeeMapper.insert(employee);
     }
 
 }
