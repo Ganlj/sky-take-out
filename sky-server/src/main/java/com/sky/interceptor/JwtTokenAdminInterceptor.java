@@ -50,7 +50,7 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             //这里用到的技术为ThreadLocal，ThreadLocal并不是一个线程，而是Thread的局部变量
             //ThreadLocal为每个线程提供了一个单独的存储空间，具有线程隔离的效果，只有在线程内才能获取对应的值，线程外访问不了
             BaseContext.setCurrentId(empId);
-            log.info("当前员工id：", empId);
+            log.info("当前员工id：{}", empId);
             //3、通过，放行
             return true;
         } catch (Exception ex) {
